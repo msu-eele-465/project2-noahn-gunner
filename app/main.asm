@@ -81,7 +81,10 @@ START       bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
             bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
             ret
 
-
+STOP        bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay                  ; Call delay subroutine
+            bis.b   #BIT0,&P2OUT            ; Set SDA to HIGH
+            ret
 
 ;------------------------------------------------------------------------------
 ;           ISR
