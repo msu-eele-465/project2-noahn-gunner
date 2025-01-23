@@ -34,6 +34,9 @@ init:
             bis.b   #BIT2,&P2OUT            ; Set P2.2 to HIGH
 
                 ; GPIO for LED
+            bic.b   #BIT0,&P1OUT            ; Clear P1.0 output
+            bis.b   #BIT0,&P1DIR            ; P1.0 output
+
             bic.b   #BIT6,&P6OUT            ; Clear P6.6 output
             bis.b   #BIT6,&P6DIR            ; P6.6 output
             bic.w   #LOCKLPM5,&PM5CTL0      ; Unlock I/O pins 
@@ -59,8 +62,24 @@ init:
 main:
 
             nop 
+            xor.b   #BIT0,&P1OUT
+            call    #START               ; Call START subroutine
             jmp main
             nop
+
+
+;------------------------------------------------------------------------------
+;           Subroutines
+;------------------------------------------------------------------------------
+Delay       mov.w   #2, R14
+Inner_loop  dec.w   R14
+            jnz     Inner_loop
+            ret
+
+START       bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
+            call    #Delay                  ; Call delay subroutine
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            ret
 
 
 
@@ -69,8 +88,8 @@ main:
 ;------------------------------------------------------------------------------
 ISR_TB0_Overflow:
             xor.b   #BIT6,&P6OUT
-            xor.b   #BIT0,&P2OUT
-            xor.b   #BIT2,&P2OUT
+            ;xor.b   #BIT0,&P2OUT
+            ;xor.b   #BIT2,&P2OUT
             bic.w   #CCIFG,&TB0CCTL0
             reti
             
