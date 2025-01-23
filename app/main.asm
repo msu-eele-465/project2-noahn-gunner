@@ -23,20 +23,38 @@ init:
             ; Disable low-power mode
             bic.w   #LOCKLPM5,&PM5CTL0
 
+            ; Port Setup
+                ; GPIO for SDA and SCL
+            bic.b   #BIT0,&P2OUT            ; Clear P2.0 output
+            bis.b   #BIT0,&P2DIR            ; P2.0 output (SDA)
+            bis.b   #BIT0,&P2OUT            ; Set P2.0 to HIGH
+
+            bic.b   #BIT2,&P2OUT            ; Clear P2.2 output
+            bis.b   #BIT2,&P2DIR            ; P2.2 output (SCL)
+            bis.b   #BIT2,&P2OUT            ; Set P2.2 to HIGH
+
+                ; GPIO for LED
             bic.b   #BIT6,&P6OUT            ; Clear P6.6 output
             bis.b   #BIT6,&P6DIR            ; P6.6 output
-            bic.w   #LOCKLPM5,&PM5CTL0      ; Unlock I/O pins
+            bic.w   #LOCKLPM5,&PM5CTL0      ; Unlock I/O pins 
+
+            ; Timer Setup
 
             bis.w   #TBCLR,&TB0CTL          ; Clear timer
             bis.w   #TBSSEL__SMCLK,&TB0CTL  ; Select SMCLK as timer source
             bis.w   #MC__UP,&TB0CTL         ; UP counting
             bis.w   #ID__4,&TB0CTL          ; Div-by-4
-            mov.w   #111,&TB0EX0              ; Divide by 8
+            mov.w   #111,&TB0EX0            ; Divide by 8
 
             mov.w   #32150,&TB0CCR0
             bis.w   #CCIE,&TB0CCTL0
             bic.w   #CCIFG,&TB0CCTL0
+            nop
             bis.w   #GIE,SR
+            nop
+
+   
+
 
 main:
 
@@ -51,6 +69,8 @@ main:
 ;------------------------------------------------------------------------------
 ISR_TB0_Overflow:
             xor.b   #BIT6,&P6OUT
+            xor.b   #BIT0,&P2OUT
+            xor.b   #BIT2,&P2OUT
             bic.w   #CCIFG,&TB0CCTL0
             reti
             
