@@ -63,9 +63,11 @@ main:
 
             nop 
             xor.b   #BIT0,&P1OUT
-            call    #START               ; Call START subroutine
-            mov.b   #0AAh, tx_byte
-            call    #i2c_tx_byte
+            call    #START                  ; Call START subroutine
+            mov.b   #07Bh, tx_byte          ; Set Address
+            call    #i2c_tx_byte            ; Transmit Address
+            call    #tx_ACK                 ; Send Ack
+            call    #STOP                   ; STOP
             jmp     main
             nop
 
@@ -121,6 +123,16 @@ tx_bit_end
             dec.w   R13
             jnz     byte_loop
             ret
+
+tx_ACK
+            ;SDA to LOW then pulse SCL
+            bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            ret
+
 
 ;------------------------------------------------------------------------------
 ;           ISR
