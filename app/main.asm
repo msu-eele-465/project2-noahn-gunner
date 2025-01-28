@@ -64,8 +64,19 @@ main:
             nop 
             xor.b   #BIT0,&P1OUT
             call    #START               ; Call START subroutine
-            jmp main
+            mov.b   #0AAh, tx_byte
+            call    #i2c_tx_byte
+            jmp     main
             nop
+
+;------------------------------------------------------------------------------
+;           Memory Allocation
+;------------------------------------------------------------------------------
+
+            .data
+            .retain
+
+tx_byte:    .ubyte  00h                        ; Create variable tx_byte
 
 
 ;------------------------------------------------------------------------------
@@ -84,6 +95,31 @@ START       bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
 STOP        bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
             call    #Delay                  ; Call delay subroutine
             bis.b   #BIT0,&P2OUT            ; Set SDA to HIGH
+            ret
+
+i2c_tx_byte 
+            mov.w  #0008h, R13
+byte_loop   rlc.b   tx_byte
+            jlo     tx_bit_0
+            jc      tx_bit_1
+tx_bit_0
+            bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            call    #Delay
+            jmp     tx_bit_end
+tx_bit_1
+            bis.b   #BIT0,&P2OUT            ; Set SDA to HIGH
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            call    #Delay
+tx_bit_end
+            dec.w   R13
+            jnz     byte_loop
             ret
 
 ;------------------------------------------------------------------------------
@@ -105,3 +141,4 @@ ISR_TB0_Overflow:
             .sect   ".int43"
             .short  ISR_TB0_Overflow
             .end
+
