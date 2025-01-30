@@ -66,19 +66,19 @@ main:
             call    #START                  ; Call START subroutine
             mov.b   #01010100b, tx_address  ; Set Address
             call    #i2c_tx_byte            ; Transmit Address
-            call    #tx_ACK                 ; Send Ack
+            call    #rx_ACK                 ; Send Ack
             
             mov.b   #48h, tx_address        ; Set Data
             call    #i2c_tx_byte            ; Transmit Data
-            call    #tx_ACK                 ; Send Ack
+            call    #rx_ACK                 ; Send Ack
             
             mov.b   #69h, tx_address        ; Set Data
             call    #i2c_tx_byte            ; Transmit Data
-            call    #tx_ACK                 ; Send Ack
+            call    #rx_ACK                 ; Send Ack
             
             mov.b   #3Fh, tx_address        ; Set Data
             call    #i2c_tx_byte            ; Transmit Data
-            call    #tx_ACK                 ; Send Ack
+            call    #rx_ACK                 ; Send Ack
 
             call    #STOP                   ; STOP
             jmp     main
@@ -146,6 +146,34 @@ tx_ACK
             call    #Delay
             bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
             ret
+
+rx_ACK
+            ;receive ACK from AD2
+            bic.b   #BIT0,&P2DIR            ; P2.0 input (SDA)
+            bis.b   #BIT0,&P2REN            ; P2.0 enable resistor
+            bis.b   #BIT0,&P2OUT            ; P2.0 pullup resistor
+            call    #Delay
+
+            bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay
+            ; bitmask to read value of 2.0
+            mov.b   &P2IN, R12
+            inv.b   R12
+            and.b   #BIT0, R12
+            jz      rx_ACK_LOW
+rx_ACK_HIGH
+            call    #STOP
+            jmp     rx_ACK_END
+rx_ACK_LOW
+rx_ACK_END
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            call    #Delay
+            bic.b   #BIT0,&P2OUT            ; Clear P2.0 output
+            bis.b   #BIT0,&P2DIR            ; P2.0 output (SDA)
+            bis.b   #BIT0,&P2OUT            ; Set P2.0 to HIGH
+            ret
+
+
 
 
 ;------------------------------------------------------------------------------
