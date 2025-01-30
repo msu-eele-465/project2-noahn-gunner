@@ -71,6 +71,14 @@ main:
             mov.b   #48h, tx_address        ; Set Data
             call    #i2c_tx_byte            ; Transmit Data
             call    #tx_ACK                 ; Send Ack
+            
+            mov.b   #69h, tx_address        ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #tx_ACK                 ; Send Ack
+            
+            mov.b   #3Fh, tx_address        ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #tx_ACK                 ; Send Ack
 
             call    #STOP                   ; STOP
             jmp     main
