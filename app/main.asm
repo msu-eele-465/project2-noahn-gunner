@@ -64,9 +64,14 @@ main:
             nop 
             xor.b   #BIT0,&P1OUT
             call    #START                  ; Call START subroutine
-            mov.b   #07Bh, tx_byte          ; Set Address
+            mov.b   #01010100b, tx_address  ; Set Address
             call    #i2c_tx_byte            ; Transmit Address
             call    #tx_ACK                 ; Send Ack
+            
+            mov.b   #48h, tx_address        ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #tx_ACK                 ; Send Ack
+
             call    #STOP                   ; STOP
             jmp     main
             nop
@@ -78,6 +83,7 @@ main:
             .data
             .retain
 
+tx_address: .ubyte  00h                        ; Create variable tx_address
 tx_byte:    .ubyte  00h                        ; Create variable tx_byte
 
 
@@ -101,7 +107,7 @@ STOP        bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
 
 i2c_tx_byte 
             mov.w  #0008h, R13
-byte_loop   rlc.b   tx_byte
+byte_loop   rlc.b   tx_address
             jlo     tx_bit_0
             jc      tx_bit_1
 tx_bit_0
