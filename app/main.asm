@@ -62,26 +62,15 @@ init:
 main:
 
             nop 
-            call    #tx_start               ; start condition
-            mov.b   #01010100b, tx_address  ; Set Address
-            call    #i2c_tx_address         ; Transmit Address
-            call    #rx_ACK                 ; Send Ack
             
-            mov.b   #48h, tx_byte           ; Set Data
-            call    #i2c_tx_byte            ; Transmit Data
-            call    #rx_ACK                 ; Send Ack
-            
-            mov.b   #69h, tx_byte           ; Set Data
-            call    #i2c_tx_byte            ; Transmit Data
-            call    #rx_ACK                 ; Send Ack
-            
-            mov.b   #3Fh, tx_byte           ; Set Data
-            call    #i2c_tx_byte            ; Transmit Data
-            call    #rx_ACK                 ; Send Ack
-
-            call    #tx_stop                ; stop condition
-
-            ;call    #tx_count
+            call    #tx_start
+            call    #Delay
+            mov.b   #01010101b, tx_address  ; Set Address
+            call    #i2c_tx_address
+            call    #Delay
+            call    #i2c_rx_byte
+            call    #Delay
+            call    #tx_stop
 
             jmp     main
             nop
@@ -95,7 +84,9 @@ main:
 
 tx_address: .ubyte  00h                        ; Create variable tx_address
 tx_byte:    .ubyte  00h                        ; Create variable tx_byte
+rx_byte:    .ubyte  00h                        ; Create variable rx_byte
 count:      .ubyte  00h                        ; Create count variable
+count2:     .ubyte  00h                        ; Create count2 variable
 
 
 ;------------------------------------------------------------------------------
@@ -188,6 +179,27 @@ tx_count_loop
             jnz     tx_count_loop           ; loop if counter is not 0
             
             call    #tx_stop                ; stop condition
+
+; -- transmit multiple bytes (3 arbitrary ones)
+tx_transmit_data
+            call    #tx_start               ; start condition
+            mov.b   #01010100b, tx_address  ; Set Address
+            call    #i2c_tx_address         ; Transmit Address
+            call    #rx_ACK                 ; Send Ack
+            
+            mov.b   #48h, tx_byte           ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #rx_ACK                 ; Send Ack
+            
+            mov.b   #69h, tx_byte           ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #rx_ACK                 ; Send Ack
+            
+            mov.b   #3Fh, tx_byte           ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #rx_ACK                 ; Send Ack
+
+            call    #tx_stop                ; stop condition
             
 ; -- simulate ack
 tx_ACK
@@ -230,7 +242,55 @@ rx_ACK_END
             bis.b   #BIT0,&P2OUT            ; Set P2.0 to HIGH
             ret
 
+; -- receive 12c data
+i2c_rx_byte
+            ; set SDA as input to receive data
+            bic.b   #BIT0,&P2DIR            ; P2.0 input (SDA)
+            bis.b   #BIT0,&P2REN            ; P2.0 enable resistor
+            bis.b   #BIT0,&P2OUT            ; P2.0 pullup resistor
+            
+            mov.b   #08h, R11               ; define loop counter
 
+            call    #Delay
+rx_byte_loop
+            bic.b   #BIT2,&P2OUT            ; SCL low
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; SCL high
+            call    #Delay
+
+            ; bitmask to read value of 2.0
+            mov.b   &P2IN, R12
+            inv.b   R12
+            and.b   #BIT2, R12
+            call    #Delay
+            jz      rx_SDA_LOW
+rx_SDA_HIGH
+            bis.b   #BIT0, R10              ; save data
+            rlc.b   R10                     ; rotate register left for next bit
+            jmp     rx_SDA_END
+rx_SDA_LOW 
+            bic.b   #BIT0, R10              ; save data
+            rlc.b   R10                     ; rotate register left for next bit
+            jmp     rx_SDA_END
+rx_SDA_END
+            dec     R11
+            jnz     rx_byte_loop
+            rrc.b   R10
+            bic.b   #BIT2,&P2OUT            ; SCL low, finished 8th bit
+            call    #Delay
+            ; -- set SDA as ouput to send ACK/NACK
+            bic.b   #BIT0,&P2OUT            ; Clear P2.0 output
+            bis.b   #BIT0,&P2DIR            ; P2.0 output (SDA)
+            ; force NACK, set it high by default
+            bis.b   #BIT0,&P2OUT            ; Set P2.0 to HIGH
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; SCL high
+            call    #Delay
+            bic.b   #BIT2,&P2OUT            ; SCL low
+            call    #Delay
+            mov.b   R10, rx_byte
+
+            ret
 
 
 ;------------------------------------------------------------------------------
