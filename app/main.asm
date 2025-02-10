@@ -249,7 +249,7 @@ i2c_rx_byte
             bis.b   #BIT0,&P2REN            ; P2.0 enable resistor
             bis.b   #BIT0,&P2OUT            ; P2.0 pullup resistor
             
-            mov.b   #08h, R11               ; define loop counter
+            mov.b   #09h, R11               ; define loop counter
 
             call    #Delay
 rx_byte_loop
