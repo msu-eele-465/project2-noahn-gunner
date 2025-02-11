@@ -124,12 +124,15 @@ main:
             call    #rx_ACK                  ; Receive ACK
 
             call    #i2c_rx_byte             ; Read first byte from RTC
-            call    #tx_NACK                  ; Acknowledge read (expecting more bytes)
+            call    #tx_ACK                  ; Acknowledge read (expecting more bytes)
 
-            ;call    #i2c_rx_byte             ; Read second byte from RTC
-            ;call    #tx_NACK                 ; NACK to end transmission
+            call    #i2c_rx_byte             ; Read second byte from RTC
+            call    #tx_ACK                 
 
-            mov.b   rx_byte, R9              ; Store received data in R9
+            call    #i2c_rx_byte             ; Read third register from RTC
+            call    #tx_NACK
+
+            ;mov.b   rx_byte, R9              ; Store received data in R9
 
             call    #tx_stop                 ; Send stop condition
             call    #Delay
