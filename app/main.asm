@@ -63,15 +63,39 @@ main:
 
             nop 
             
+            ;call    #tx_start
+            ;call    #Delay
+            ;mov.b   #01010101b, tx_address  ; Set Address
+            ;call    #i2c_tx_address
+            ;call    #Delay
+            ;call    #tx_ACK
+            ;call    #Delay
+            ;call    #i2c_rx_byte
+            ;call    #tx_ACK
+            ;call    #Delay
+            ;call    #i2c_rx_byte
+            ;call    #tx_NACK
+            ;call    #Delay
+            ;call    #tx_stop           
+                
+            call    #tx_start               ; start condition
+            call    #Delay
+            mov.b   #68h, tx_address       ; Set Address
+            call    #i2c_tx_address         ; Transmit Address
+            call    #rx_ACK                 ; Recieve Ack
+            
+            mov.b   #00h, tx_byte           ; Set Data
+            call    #i2c_tx_byte            ; Transmit Data
+            call    #rx_ACK                 ; Send Ack
+
+            ;call    #tx_stop                ; stop condition
+
             call    #tx_start
             call    #Delay
-            mov.b   #01010101b, tx_address  ; Set Address
+            mov.b   #01101001b, tx_address      ; Set Address
             call    #i2c_tx_address
             call    #Delay
-            call    #tx_ACK
-            call    #Delay
-            call    #i2c_rx_byte
-            call    #tx_ACK
+            call    #rx_ACK
             call    #Delay
             call    #i2c_rx_byte
             call    #tx_NACK
@@ -93,6 +117,7 @@ tx_byte:    .ubyte  00h                        ; Create variable tx_byte
 rx_byte:    .ubyte  00h                        ; Create variable rx_byte
 count:      .ubyte  00h                        ; Create count variable
 count2:     .ubyte  00h                        ; Create count2 variable
+seconds:    .ubyte  00h                        ; Create seconds variable
 
 
 ;------------------------------------------------------------------------------
@@ -301,6 +326,53 @@ rx_SDA_END
             mov.b   R10, rx_byte
 
             ret
+
+; -- RTC
+rtc_write_register
+            call    #tx_start                ; Send start condition
+            mov.b   #0xD0, tx_address        ; RTC Write Address (0xD0)
+            call    #i2c_tx_address          ; Transmit device address
+            call    #rx_ACK                  ; Receive ACK
+            
+            mov.b   R8, tx_byte              ; Send register address
+            call    #i2c_tx_byte             ; Transmit register address
+            call    #rx_ACK                  ; Receive ACK
+
+            mov.b   R9, tx_byte              ; Send data to write
+            call    #i2c_tx_byte             ; Transmit data
+            call    #rx_ACK                  ; Receive ACK
+
+            call    #tx_stop                 ; Send stop condition
+            ret
+
+rtc_read_register
+            call    #tx_start                ; Send start condition
+            mov.b   #0xD0, tx_address        ; RTC Write Address (0xD0) for register selection
+            call    #i2c_tx_address          ; Send device address
+            call    #rx_ACK                  ; Receive ACK
+            
+            mov.b   R8, tx_byte              ; Send register address
+            call    #i2c_tx_byte             ; Transmit register address
+            call    #rx_ACK                  ; Receive ACK
+
+            call    #tx_start                ; Send repeated start condition
+            mov.b   #0xD1, tx_address        ; RTC Read Address (0xD1) to read data
+            call    #i2c_tx_address          ; Send device address
+            call    #rx_ACK                  ; Receive ACK
+
+            call    #i2c_rx_byte             ; Read first byte from RTC
+            call    #tx_ACK                  ; Acknowledge read (expecting more bytes)
+
+            call    #i2c_rx_byte             ; Read second byte from RTC
+            call    #tx_NACK                 ; NACK to end transmission
+
+            mov.b   rx_byte, R9              ; Store received data in R9
+
+            call    #tx_stop                 ; Send stop condition
+            ret
+
+
+
 
 
 ;------------------------------------------------------------------------------
