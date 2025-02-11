@@ -78,29 +78,62 @@ main:
             ;call    #Delay
             ;call    #tx_stop           
                 
-            call    #tx_start               ; start condition
-            call    #Delay
-            mov.b   #68h, tx_address       ; Set Address
-            call    #i2c_tx_address         ; Transmit Address
-            call    #rx_ACK                 ; Recieve Ack
+            ;call    #tx_start               ; start condition
+            ;call    #Delay
+            ;mov.b   #11010000b, tx_address       ; Set Address
+            ;call    #i2c_tx_address         ; Transmit Address
+            ;call    #rx_ACK                 ; Recieve Ack
             
-            mov.b   #00h, tx_byte           ; Set Data
-            call    #i2c_tx_byte            ; Transmit Data
-            call    #rx_ACK                 ; Send Ack
+            ;mov.b   #00h, tx_byte           ; Set Data
+            ;call    #i2c_tx_byte            ; Transmit Data
+            ;call    #rx_ACK                 ; Send Ack
 
             ;call    #tx_stop                ; stop condition
 
-            call    #tx_start
+            ;call    #tx_start
+            ;call    #Delay
+            ;mov.b   #01101001b, tx_address      ; Set Address
+            ;call    #i2c_tx_address
+            ;call    #Delay
+            ;call    #rx_ACK
+            ;call    #Delay
+            ;call    #i2c_rx_byte
+            ;call    #tx_NACK
+            ;call    #Delay
+            ;call    #tx_stop
+
+            ;rtc_read_register
+            call    #tx_start                ; Send start condition
             call    #Delay
-            mov.b   #01101001b, tx_address      ; Set Address
-            call    #i2c_tx_address
+            mov.b   #11010000b, tx_address        ; RTC Write Address (0xD0) for register selection
+            call    #i2c_tx_address          ; Send device address
+            call    #rx_ACK                  ; Receive ACK
+            
+            mov.b   #00h, tx_byte              ; Send register address
+            call    #i2c_tx_byte             ; Transmit register address
+            call    #rx_ACK                  ; Receive ACK
             call    #Delay
-            call    #rx_ACK
-            call    #Delay
-            call    #i2c_rx_byte
-            call    #tx_NACK
-            call    #Delay
+
             call    #tx_stop
+            call    #Delay
+
+            call    #tx_start                ; Send repeated start condition
+            call    #Delay
+            mov.b   #11010001b, tx_address   ; RTC Read Address (0xD1) to read data
+            call    #i2c_tx_address          ; Send device address
+            call    #rx_ACK                  ; Receive ACK
+
+            call    #i2c_rx_byte             ; Read first byte from RTC
+            call    #tx_NACK                  ; Acknowledge read (expecting more bytes)
+
+            ;call    #i2c_rx_byte             ; Read second byte from RTC
+            ;call    #tx_NACK                 ; NACK to end transmission
+
+            mov.b   rx_byte, R9              ; Store received data in R9
+
+            call    #tx_stop                 ; Send stop condition
+            call    #Delay
+            ;ret
 
             jmp     main
             nop
@@ -345,31 +378,7 @@ rtc_write_register
             call    #tx_stop                 ; Send stop condition
             ret
 
-rtc_read_register
-            call    #tx_start                ; Send start condition
-            mov.b   #0xD0, tx_address        ; RTC Write Address (0xD0) for register selection
-            call    #i2c_tx_address          ; Send device address
-            call    #rx_ACK                  ; Receive ACK
-            
-            mov.b   R8, tx_byte              ; Send register address
-            call    #i2c_tx_byte             ; Transmit register address
-            call    #rx_ACK                  ; Receive ACK
 
-            call    #tx_start                ; Send repeated start condition
-            mov.b   #0xD1, tx_address        ; RTC Read Address (0xD1) to read data
-            call    #i2c_tx_address          ; Send device address
-            call    #rx_ACK                  ; Receive ACK
-
-            call    #i2c_rx_byte             ; Read first byte from RTC
-            call    #tx_ACK                  ; Acknowledge read (expecting more bytes)
-
-            call    #i2c_rx_byte             ; Read second byte from RTC
-            call    #tx_NACK                 ; NACK to end transmission
-
-            mov.b   rx_byte, R9              ; Store received data in R9
-
-            call    #tx_stop                 ; Send stop condition
-            ret
 
 
 
