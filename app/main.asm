@@ -68,7 +68,13 @@ main:
             mov.b   #01010101b, tx_address  ; Set Address
             call    #i2c_tx_address
             call    #Delay
+            call    #tx_ACK
+            call    #Delay
             call    #i2c_rx_byte
+            call    #tx_ACK
+            call    #Delay
+            call    #i2c_rx_byte
+            call    #tx_NACK
             call    #Delay
             call    #tx_stop
 
@@ -201,7 +207,7 @@ tx_transmit_data
 
             call    #tx_stop                ; stop condition
             
-; -- simulate ack
+; -- send ack
 tx_ACK
             ;SDA to LOW then pulse SCL
             bic.b   #BIT0,&P2OUT            ; Set SDA to LOW
@@ -211,7 +217,17 @@ tx_ACK
             bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
             ret
 
-; -- receive actual ack
+; -- send nack
+tx_NACK
+            ;SDA to HIGH then pulse SCL
+            bis.b   #BIT0,&P2OUT            ; Set SDA to LOW
+            call    #Delay
+            bis.b   #BIT2,&P2OUT            ; Set SCL to HIGH
+            call    #Delay
+            bic.b   #BIT2,&P2OUT            ; Set SCL to LOW
+            ret
+
+; -- receive ack/nack
 rx_ACK
 
             ;receive ACK from AD2
@@ -249,7 +265,7 @@ i2c_rx_byte
             bis.b   #BIT0,&P2REN            ; P2.0 enable resistor
             bis.b   #BIT0,&P2OUT            ; P2.0 pullup resistor
             
-            mov.b   #09h, R11               ; define loop counter
+            mov.b   #08h, R11               ; define loop counter
 
             call    #Delay
 rx_byte_loop
@@ -281,13 +297,7 @@ rx_SDA_END
             ; -- set SDA as ouput to send ACK/NACK
             bic.b   #BIT0,&P2OUT            ; Clear P2.0 output
             bis.b   #BIT0,&P2DIR            ; P2.0 output (SDA)
-            ; force NACK, set it high by default
-            bis.b   #BIT0,&P2OUT            ; Set P2.0 to HIGH
-            call    #Delay
-            bis.b   #BIT2,&P2OUT            ; SCL high
-            call    #Delay
-            bic.b   #BIT2,&P2OUT            ; SCL low
-            call    #Delay
+            
             mov.b   R10, rx_byte
 
             ret
